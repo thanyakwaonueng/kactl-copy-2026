@@ -3,7 +3,6 @@
  * Description: Segment tree with point update for range sum
  * Time: O(\log N)
  */
-//TODO: use 0 base indexing
 vector<long long>tree;
 void update(int node,int n_l,int n_r,int q_i,long long value){
     if(n_r<q_i || q_i<n_l)return;

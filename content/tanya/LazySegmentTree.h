@@ -3,7 +3,6 @@
  * Description: Segment tree with lazy propagation update for range sum
  * Time: O(\log N).
  */
- //TODO: use 0 base indexing
 vector<long long> tree,lazy;
 void update(int node,int n_l,int n_r,int q_l,int q_r,int value){
     if(lazy[node]!=0){
