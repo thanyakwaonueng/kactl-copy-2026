@@ -44,8 +44,8 @@ typedef vector<pi> vpi;
 typedef vector<pl> vpl;
 typedef vector<cd> vcd;
  
-template<class T> using pq = priority_queue<T>;
-template<class T> using pqg = priority_queue<T, vector<T>, greater<T>>;
+//template<class T> using pq = priority_queue<T>;
+//template<class T> using pqg = priority_queue<T, vector<T>, greater<T>>;
 
 #define rep(i, a) for(int i=0;i<a;++i)
 #define FOR(i, a, b) for (int i=a; i<(b); i++)
@@ -53,7 +53,7 @@ template<class T> using pqg = priority_queue<T, vector<T>, greater<T>>;
 #define FORd(i,a,b) for (int i = (b)-1; i >= a; i--)
 #define F0Rd(i,a) for (int i = (a)-1; i >= 0; i--)
 #define trav(a,x) for (auto& a : x)
-#define uid(a, b) uniform_int_distribution<int>(a, b)(rng)
+#define uid(a, b) uniform_int_distribution<long long>(a, b)(rng)
  
 #define sz(x) (int)(x).size()
 #define mp make_pair
@@ -71,26 +71,10 @@ template<class T> bool ckmax(T& a, const T& b) { return a < b ? a = b, 1 : 0; }
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 
 const char nl = '\n';
-const int N =2e5+1;
-const int INF = 1e9+7;
-const long long LINF = 1e18+7;
-
-void solve(){
-}
+const int N = 2e5+3;
+const int INF = INT_MAX;
+const long long LINF = LLONG_MAX;
 
 int main(){
     ios::sync_with_stdio(false);cin.tie(nullptr);
-    int t = 1;
-    cin>>t;
-    while(t--)solve();
 }
-
-
-
-
-
-
-
-
-
-
