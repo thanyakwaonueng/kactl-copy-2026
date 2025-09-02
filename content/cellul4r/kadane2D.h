@@ -4,32 +4,60 @@
  * Time: O()
  */
 
-int maxSumRectangle(vector<vector<int>> &mat) {
-  
-    int n = mat.size();
-    int m = mat[0].size();
+int kadane(vector<int>& temp) {
+  	int rows = temp.size();
+    int currSum = 0;
     int maxSum = INT_MIN;
 
-    for (int up = 0; up < n; up++) {
-        for (int left = 0; left < m; left++) {
-            for (int down = up; down < n; down++) {
-                for (int right = left; right < m; right++) {
-                    // Find the sum of submatrix(up, right, down, left)
+    for (int i = 0; i < rows; i++) {
+        currSum += temp[i];
 
-                    int sum = 0;
+        // Update maxSum if the current sum is greater
+        if (maxSum < currSum) {
+            maxSum = currSum;
+        }
 
-                    for (int i = up; i <= down; i++) {
-                        for (int j = left; j <= right; j++) {
-                            sum += mat[i][j];
-                        }
-                    }
+        // If the current sum becomes negative, reset it to 0
+        if (currSum < 0) {
+            currSum = 0;
+        }
+    }
 
-                    // Update maxSum if sum > maxSum.
-                    if (sum > maxSum) {
-                        maxSum = sum;
-                    }
-                }
+    return maxSum;
+}
+
+// Function to find the maximum sum rectangle in a 2D matrix
+int maxRectSum(vector<vector<int>> &mat) {
+    int rows = mat.size();
+    int cols = mat[0].size();
+
+    int maxSum = INT_MIN;
+
+    // Initialize a temporary array to store row-wise
+  	// sums between left and right boundaries
+    vector<int> temp(rows);
+
+    // Check for all possible left and right boundaries
+    for (int left = 0; left < cols; left++) {
+
+        // Reset the temporary array for each new left boundary
+        for (int i = 0; i < rows; i++)
+            temp[i] = 0;
+
+        for (int right = left; right < cols; right++) {
+
+            // Update the temporary array with the current
+          	// column's values
+            for (int row = 0; row < rows; row++) {
+                temp[row] += mat[row][right];
             }
+
+            // Find the maximum sum of the subarray for the
+          	// current column boundaries
+            int sum = kadane(temp);
+
+            // Update the maximum sum found so far
+            maxSum = max(maxSum, sum);
         }
     }
 
