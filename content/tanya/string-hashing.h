@@ -16,7 +16,7 @@ void compute_hash(string const& s){
     }
 }
 
-HASH sub_hash(ll l, ll r){ //range [l, r)
+HASH sub_hash(ll l, ll r){ //range half-open [l, r)
     return (h[r] - p[r-l]*h[l]%M + M)%M;
 }
 
