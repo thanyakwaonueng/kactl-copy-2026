@@ -23,6 +23,38 @@
 \usepackage[hidelinks]{hyperref}        % For clickable table of contents
 
 % Config commands
+% AI fix
+\newcommand{\maketeampage}{
+    \pagestyle{fancy}
+    \setcounter{page}{1}
+    \thispagestyle{fancy}
+    \begin{center}
+        \strut
+        \vspace{3cm}\\
+        \includegraphics[width=3cm]{\@unilogo}\\
+        {\fontsize{25}{30}\selectfont \@unilong\\}
+        {\fontsize{60}{60}\selectfont \@teamname\\}
+        \vspace{0.5cm}
+        {\huge \@teammembers\\}
+        \vfill
+        {\fontsize{21}{25}\selectfont \@contestname}\\
+        \vspace{0.5cm}
+        {\huge \@contestdate}\\
+        \vspace{1cm}
+    \end{center}
+    \clearpage
+    \pagestyle{fancy}
+}
+% AI fix
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \lhead{\@unishort}
+    \chead{\immediate\write18{python3 content/tex/preprocessor.py --print-header "\splitbotmarks\hdrmark|\botmarks\hdrmark" -o \@builddir/header2.tmp}\immediate\input{\@builddir/header2.tmp}}
+    \rhead{\thepage}
+    \lfoot{}\cfoot{}\rfoot{}
+    \renewcommand{\headrulewidth}{0pt}
+}
+
 \newcommand{\subtitle}[1]{
 	\def\@subtitle{#1}
 }
@@ -215,26 +247,7 @@
 
 \pdfsuppresswarningpagegroup=1
 
-\newcommand{\maketeampage}{
-	\pagestyle{empty}
-	\setcounter{page}{0}
-	\begin{center}
-		\strut % Magic
-		\vspace{3cm}\\
-		\includegraphics[width=3cm]{\@unilogo}\\
-		{\fontsize{25}{30}\selectfont \@unilong\\}
-		{\fontsize{60}{60}\selectfont \@teamname\\}
-		\vspace{0.5cm}
-		{\huge \@teammembers\\}
-		\vfill
-		{\fontsize{21}{25}\selectfont \@contestname}\\
-		\vspace{0.5cm}
-		{\huge \@contestdate}\\
-		\vspace{1cm}
-	\end{center}
-	\clearpage
-	\pagestyle{fancy}
-}
+%I delete the one where it overlapp with AI fix
 
 \newcommand{\kactlref}[1]{
 	\ifthenelse{\boolean{appendixmode}}{}{
