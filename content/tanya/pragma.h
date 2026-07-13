@@ -1,6 +1,6 @@
 /**
  * Author: Tanya
- * Description: random pragma magic that I don't fucking know but ocassionaly solve my stupid bad implementation code
+ * Description: random pragma magic that I don't fucking know how this work, but it ocassionaly solve my stupid bad implementation code in the past(segtree constant factor), this should not be mandatory and only last resort
  */
 //some one on cf told us that these are mostly enough
 #pragma GCC target ("avx2")
