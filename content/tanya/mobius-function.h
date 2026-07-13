@@ -1,8 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: 
  */
-
 int mob[N+1];
 void mobius() {
   mob[1] = 1;

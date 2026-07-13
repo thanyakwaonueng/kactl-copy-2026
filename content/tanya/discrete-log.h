@@ -1,8 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: Returns minimum x for which a**x === b (mod m).
  */
-// Returns minimum x for which a ^ x % m = b % m.
 int solve(int a, int b, int m) {
     a %= m, b %= m;
     int k = 1, add = 0, g;

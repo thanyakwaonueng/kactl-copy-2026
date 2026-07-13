@@ -1,8 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: randomize primality test O(logn**2)
  */
-//randomize primality test O(logn^2)
 using u64 = uint64_t;
 using u128 = __uint128_t;
 
@@ -30,13 +29,14 @@ bool check_composite(u64 n, u64 a, u64 d, int s){
     return true;
 }
 
-//random number generator temporalily disable because my template already has it
-//mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+//random number generator 
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
 long long rnd(long long x, long long y) {
   return uniform_int_distribution<long long>(x, y)(rng);
 }
 
-bool MillerRabin(u64 n, int iter=5){ // return true if n is probably prime, else return false.
+// return true if n is probably prime, else return false.
+bool MillerRabin(u64 n, int iter=5){ 
     if(n < 4){
         return n == 2 || n == 3;
     }

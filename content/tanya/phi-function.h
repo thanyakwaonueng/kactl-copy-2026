@@ -1,8 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: 
  */
-//O(sqrt n)
 int phi(int n) {
     int result = n;
     for (int i = 2; i * i <= n; i++) {

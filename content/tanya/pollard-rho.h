@@ -1,8 +1,10 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: randomize factorization in O(n**1/4 * logn)
  */
-//randomize factorization in O(n^1/4 * logn)
+ #define uid(a, b) uniform_int_distribution<long long>(a, b)(rng)
+ mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+
 long long mult(long long a, long long b, long long mod) {
     return (__int128)a * b % mod;
 }

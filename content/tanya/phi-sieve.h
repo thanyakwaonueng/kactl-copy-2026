@@ -1,9 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: 
  */
-//set value for M
-const int M = 1e6;
 vector<int> phi(M+1);
 
 void phi_1_to_n() {

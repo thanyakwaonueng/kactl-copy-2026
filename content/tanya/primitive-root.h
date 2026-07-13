@@ -1,11 +1,7 @@
 /**
  * Author: Tanya
- * Description: TODO
+ * Description: The following code assumes that the modulo p is a prime number. To make it works for any value of p, we must add calculation of phi(p)
  */
-/*
-    The following code assumes that the modulo p is a prime number. 
-    To make it works for any value of p, we must add calculation of phi(p)
-*/
 int powmod (int a, int b, int p) {
     int res = 1;
     while (b)

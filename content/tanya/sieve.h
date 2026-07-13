@@ -2,7 +2,6 @@
  * Author: Tanya
  * Description: construct is O(sqrt(n)), can use to find all prime factor of a number in O(log n)
  */
-const int M = 2e5+1;
 vector<bool> is_prime(M+1, true);
 void sieve(){
     is_prime[0] = is_prime[1] = false;
