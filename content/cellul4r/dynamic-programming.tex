@@ -1,0 +1,353 @@
+\section{Dynamic Programming from CSES}
+
+\Topic{How to design the state}
+DP is useful when choices interact, but the future only needs a compressed summary of the past. A good test: can you compute the answer for the current step using only the state variables, without looking back at individual past choices?
+
+\begin{itemize}
+	\item \textbf{Prefix DP:} sums, numbers, rows, columns. (Dice Combinations)
+	\item \textbf{Boundary DP:} remember the last value/character/cell. (Array Description)
+	\item \textbf{Interval DP:} process a subarray by increasing length. (Removal Game)
+	\item \textbf{Subset/profile DP:} bitmask over a small set. (Elevator Rides)
+	\item \textbf{Digit DP:} build a number under an upper bound. (Counting Numbers)
+\end{itemize}
+
+\Topic{Dice Combinations}
+
+\Problem Find ordered ways to sum to $n$ using dice throws (1 to 6). Example: $n=3 \implies 4$.
+
+\State $dp[x]$ = number of ordered dice sequences with sum $x$.
+\Trans Choose the last die roll $d\in[1,6]$: add $dp[x-d]$.
+\begin{lstlisting}
+dp[0]=1
+for x=1..n:
+    for d=1..6:
+        if x>=d: dp[x]+=dp[x-d]
+\end{lstlisting}
+
+\Solution Sum all valid ways to reach the previous state $x-d$. $O(n)$ time, $O(n)$ space.
+
+\Analysis This is a basic 1D prefix DP, identical to counting compositions of $n$ into parts from $\{1..6\}$.
+
+\Topic{Minimizing Coins}
+
+\Problem Min coins of given denominations to make sum $x$. Example: $\{1,5,7\}, 11 \implies 3$.
+
+\State $dp[s]$ = minimum coins needed for sum $s$.
+\Trans Last coin is $c$, so previous sum is $s-c$.
+\begin{lstlisting}
+dp[0]=0, dp[1..x]=INF
+for s=1..x:
+    for c in coins:
+        if s>=c:
+            dp[s]=min(dp[s], dp[s-c]+1)
+\end{lstlisting}
+
+\Solution Try every coin as the last coin used. Take the minimum over valid coins. $O(nx)$ time.
+
+\Analysis A greedy approach (largest coin) fails generally. This DP is equivalent to BFS on an implicit graph of sums.
+
+\Topic{Coin Combinations I vs II}
+
+\Problem \textbf{I:} Count ordered ways to make sum $x$. \textbf{II:} Count unordered ways (multisets).
+
+\State $dp[s]$ counts ways to make sum $s$.
+\begin{lstlisting}
+// I: ordered
+dp[0]=1
+for s=1..x:
+    for c in coins:
+        if s>=c: dp[s]+=dp[s-c]
+
+// II: unordered
+dp[0]=1
+for c in coins:
+    for s=c..x:
+        dp[s]+=dp[s-c]
+\end{lstlisting}
+
+\Solution In I (ordered), outer loop is sums, deciding the last coin per sequence. In II (unordered), outer loop is coins, ensuring each multiset is generated in a fixed coin order. $O(nx)$ time.
+
+\Analysis Loop order determines permutation vs. combination counting. I counts compositions; II counts partitions.
+
+\Topic{Removing Digits}
+
+\Problem Find min steps to reduce $n$ to $0$ by subtracting one of its nonzero digits.
+
+\State $dp[x]$ = minimum moves to reduce $x$ to $0$.
+\Trans Pick any nonzero digit $d$ of $x$, move to $x-d$.
+\begin{lstlisting}
+dp[0]=0
+for x=1..n:
+    dp[x]=INF
+    for d in digits(x):
+        if d>0: dp[x]=min(dp[x],dp[x-d]+1)
+\end{lstlisting}
+
+\Solution For each number $x$, extract its digits and subtract each nonzero digit to transition from $x-d$. $O(n \cdot 10)$ time.
+
+\Analysis Transitions go to strictly smaller numbers, so bottom-up works naturally.
+
+\Topic{Grid Paths I}
+
+\Problem Count paths from top-left to bottom-right of an $n \times n$ grid moving right/down, avoiding obstacles.
+
+\State $dp[i][j]$ = number of ways to reach cell $(i,j)$.
+\Trans Final move came from up or left, unless blocked.
+\begin{lstlisting}
+dp[0][0]=1 if open
+for i=0..n-1:
+    for j=0..n-1:
+        if blocked: dp[i][j]=0
+        else:
+            if i: dp[i][j]+=dp[i-1][j]
+            if j: dp[i][j]+=dp[i][j-1]
+\end{lstlisting}
+
+\Solution Paths to $(i,j)$ sum from $(i-1,j)$ and $(i,j-1)$. Blocked cells have 0 paths. $O(n^2)$ time.
+
+\Analysis Basic 2D grid DP counting lattice paths around obstacles.
+
+\Topic{Book Shop}
+
+\Problem Knapsack: maximize pages from $n$ books within budget $x$. Max 1 copy per book.
+
+\State $dp[m]$ = max pages using processed books and money $m$.
+\Trans Take or skip each book.
+\begin{lstlisting}
+dp[0..x]=0
+for book (price,pages):
+    for m=x down to price:
+        dp[m]=max(dp[m],dp[m-price]+pages)
+\end{lstlisting}
+
+\Solution 0/1 knapsack. Try including each book. The descending money loop ensures each book is used at most once. $O(nx)$ time.
+
+\Analysis Ascending loop allows unbounded copies. Descending guarantees 0/1 usage by reading from previous states.
+
+\Topic{Array Description}
+
+\Problem Count arrays where adjacent elements differ by at most $1$. Some elements are fixed.
+
+\State $dp[i][v]$ = ways for prefix $1..i$ ending with value $v$.
+\Trans Previous value can be $v-1,v,v+1$.
+\begin{lstlisting}
+init i=1 from fixed/free a[1]
+for i=2..n:
+    for v=1..m:
+        if a[i] fixed and a[i]!=v: continue
+        dp[i][v]=dp[i-1][v-1]+dp[i-1][v]+dp[i-1][v+1]
+\end{lstlisting}
+
+\Solution A prefix is fully summarized by its last value. Sum transitions from adjacent allowed values. $O(nm)$ time.
+
+\Analysis Classic boundary DP pattern since constraints are only on adjacent pairs.
+
+\Topic{Counting Towers}
+
+\Problem Count $2 \times n$ grid tilings with $1 \times 2$ and $2 \times 1$ blocks extending upward.
+
+\State Small automaton: joined top block ($a$) or separated top blocks ($b$).
+\Trans Extend the tower one row upward.
+\begin{lstlisting}
+a[1]=1, b[1]=1
+for h=2..MAX:
+    a[h]=2*a[h-1]+b[h-1]
+    b[h]=a[h-1]+4*b[h-1]
+answer(n)=a[n]+b[n]
+\end{lstlisting}
+
+\Solution A finite state machine based on the top boundary shape. The coefficients encode valid extensions. $O(N_{max})$ time.
+
+\Analysis Classify only the boundary shape that affects the next row.
+
+\Topic{Edit Distance}
+
+\Problem Min inserts, deletes, or replaces to change string $a$ into $b$.
+
+\State $dp[i][j]$ = min ops for first $i$ of $a$ into first $j$ of $b$.
+\Trans Delete, insert, replace/match.
+\begin{lstlisting}
+dp[i][0]=i, dp[0][j]=j
+for i=1..n:
+    for j=1..m:
+        cost = (a[i-1]!=b[j-1])
+        dp[i][j]=min(dp[i-1][j]+1,
+                     dp[i][j-1]+1,
+                     dp[i-1][j-1]+cost)
+\end{lstlisting}
+
+\Solution Three branches for the edit choices. Match is free, mismatch costs 1. $O(nm)$ time.
+
+\Analysis Standard 2D sequence alignment DP (Levenshtein distance).
+
+\Topic{Rectangle Cutting}
+
+\Problem Min cuts to split $a \times b$ rectangle into squares.
+
+\State $dp[a][b]$ = minimum cuts to split $a\times b$.
+\Trans Try every vertical and horizontal first cut.
+\begin{lstlisting}
+for a=1..A:
+  for b=1..B:
+    if a==b: dp[a][b]=0
+    else:
+      dp[a][b]=INF
+      for x=1..a-1: dp[a][b]=min(dp[a][b],1+dp[x][b]+dp[a-x][b])
+      for y=1..b-1: dp[a][b]=min(dp[a][b],1+dp[a][y]+dp[a][b-y])
+\end{lstlisting}
+
+\Solution Try all splitting lines and recursively solve the pieces. $O(ab(a+b))$ time.
+
+\Analysis 2D interval-like DP, analogous to optimal matrix chain multiplication.
+
+\Topic{Money Sums}
+
+\Problem Find all achievable subset sums from $n$ coins.
+
+\State $possible[s]$ = is sum $s$ achievable?
+\Trans Take it or skip it.
+\begin{lstlisting}
+possible[0]=true
+for coin in coins:
+    for s=MAX down to coin:
+        possible[s] |= possible[s-coin]
+\end{lstlisting}
+
+\Solution 0/1 knapsack decision DP. Descending loop ensures at most 1 usage per coin. $O(nS)$ time.
+
+\Analysis Pseudo-polynomial subset sum. Bitset optimizes this beautifully.
+
+\Topic{Removal Game}
+
+\Problem 2-player game removing ends of an array. Maximize score difference.
+
+\State $dp[l][r]$ = max score diff current player can force on $l..r$.
+\Trans Take left or right, opponent plays remainder.
+\begin{lstlisting}
+dp[i][i]=a[i]
+for len=2..n:
+    for l=0..n-len:
+        r=l+len-1
+        dp[l][r]=max(a[l]-dp[l+1][r],
+                     a[r]-dp[l][r-1])
+answer=(sum+dp[0][n-1])/2
+\end{lstlisting}
+
+\Solution Interval DP. The difference achieved is the taken item minus the opponent's best response on the remainder. $O(n^2)$ time.
+
+\Analysis The ``difference game'' trick reduces two scores to one difference state.
+
+\Topic{Two Sets II}
+
+\Problem Count ways to partition $1..n$ into two equal-sum subsets.
+
+\State Count subsets with sum $S=n(n+1)/4$.
+\Trans 0/1 subset sum over numbers $1..n$.
+\begin{lstlisting}
+if n*(n+1)/2 odd: answer=0
+target=sum/2
+dp[0]=1
+for x=1..n:
+    for s=target down to x:
+        dp[s]+=dp[s-x]
+answer=dp[target] * inv2
+\end{lstlisting}
+
+\Solution 0/1 knapsack to target sum. Divide by 2 (modular inverse) since each partition is generated twice. $O(n^3)$ time.
+
+\Analysis Simple subset sum with a symmetry argument.
+
+\Topic{Projects}
+
+\Problem Weighted interval scheduling: maximize reward from non-overlapping intervals.
+
+\State $dp[i]$ = max reward using first $i$ projects sorted by end time.
+\Trans Skip $i$, or take $i$ plus best compatible prefix.
+\begin{lstlisting}
+sort by end
+for i=1..n:
+    p = last project with end[p] < start[i]
+    dp[i]=max(dp[i-1], dp[p]+reward[i])
+\end{lstlisting}
+
+\Solution Binary search the last project ending before current project starts. $O(n \log n)$ time.
+
+\Analysis Requires DP since high-weight intervals break greedy scheduling.
+
+\Topic{Elevator Rides}
+
+\Problem Min rides of capacity $x$ to transport $n$ people ($n \le 20$).
+
+\State $dp[mask]=(rides,lastWeight)$ = best packing for selected mask.
+\Trans Remove one person and add to previous best.
+\begin{lstlisting}
+dp[0]=(1,0)
+for mask=1..(1<<n)-1:
+    dp[mask]=(INF,INF)
+    for i in mask:
+        cand=dp[mask without i]
+        if cand.weight+w[i] <= X: cand.weight += w[i]
+        else: cand.rides++, cand.weight=w[i]
+        dp[mask]=min_lex(dp[mask],cand)
+\end{lstlisting}
+
+\Solution Subset DP. Lexicographically minimizing `(rides, lastWeight)` leaves max room in the current ride. $O(n 2^n)$ time.
+
+\Analysis Keeping the last ride as empty as possible is a greedy-optimal substructure within the DP mask.
+
+\Topic{Counting Tilings}
+
+\Problem Count ways to tile $n \times m$ grid with $1 \times 2$ and $2 \times 1$ dominoes.
+
+\State $dp[col][mask]$ = ways to reach column `col` with `mask` protruding.
+\Trans Fill current column by DFS.
+\begin{lstlisting}
+gen(row, mask, nextMask):
+    if row==n: add dp[col][mask] to dp[col+1][nextMask]
+    else if mask has row: gen(row+1,mask,nextMask)
+    else:
+        place horizontal -> nextMask has row
+        if row+1 free: place vertical in current column
+\end{lstlisting}
+
+\Solution Profile DP. DFS generates valid vertical/horizontal placements transitioning between column boundaries. $O(m 4^n)$ time.
+
+\Analysis Standard state-compression DP for grids with one small dimension.
+
+\Topic{Counting Numbers}
+
+\Problem Count integers in $[a,b]$ with no adjacent equal digits.
+
+\State $f(pos,prev,tight,started)$ building left to right.
+\Trans Try allowed digits, rejecting equals after start.
+\begin{lstlisting}
+solve(pos, prev, tight, started):
+    if pos==len: return 1
+    limit = tight ? digit[pos] : 9
+    ans=0
+    for d=0..limit:
+        if started and d==prev: continue
+        ans += solve(pos+1,d,tight&&d==limit,started||d>0)
+\end{lstlisting}
+
+\Solution Digit DP with state tracking the upper bound (`tight`) and leading zeros (`started`). $O(\text{digits})$ time.
+
+\Analysis Computes $f(b) - f(a-1)$ to find the answer for the range.
+
+\Topic{Increasing Subsequence}
+
+\Problem Length of longest strictly increasing subsequence.
+
+\State $tail[len]$ = smallest ending value of a length-$len$ LIS.
+\begin{lstlisting}
+tail = empty
+for x in a:
+    it = lower_bound(tail,x)
+    if it==end: push x
+    else *it=x
+answer=tail.size()
+\end{lstlisting}
+
+\Solution Binary search in the monotonic $tail$ array and replace the smallest larger element. $O(n \log n)$ time.
+
+\Analysis This is patience sorting. Smaller $tail$ values preserve flexibility for future extensions.

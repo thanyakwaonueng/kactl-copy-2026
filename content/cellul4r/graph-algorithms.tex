@@ -1,0 +1,440 @@
+\section{Graph Algorithms from CSES}
+
+\Topic{Algorithm map}
+First classify the graph question, then pick the tool:
+\begin{itemize}
+	\item \textbf{Reachability:} DFS/BFS.
+	\item \textbf{Unweighted shortest path:} BFS + parent array.
+	\item \textbf{Nonnegative weighted shortest path:} Dijkstra.
+	\item \textbf{Negative edges/cycles:} Bellman-Ford.
+	\item \textbf{All-pairs small graph:} Floyd-Warshall.
+	\item \textbf{DAG:} topological sort + DP.
+	\item \textbf{Mutual reachability:} SCC (Kosaraju or Tarjan).
+	\item \textbf{Online connectivity:} DSU.
+	\item \textbf{Capacity/matching:} Max flow (Dinic's).
+\end{itemize}
+
+\Topic{Graph representation}
+\begin{lstlisting}
+vector<int> adj[N];                  // unweighted
+vector<pair<int,ll>> adj[N];         // weighted
+vector<tuple<int,int,ll>> edges;     // Bellman/Kruskal
+\end{lstlisting}
+Adjacency list is best. Adjacency matrices are only for Floyd-Warshall.
+
+\Topic{Counting Rooms}
+
+\Problem Count connected open components in an $n \times m$ grid.
+
+\State Grid cells are graph nodes; open neighboring cells have edges.
+\begin{lstlisting}
+ans=0
+for each cell:
+    if open and unseen:
+        ans++
+        BFS/DFS mark all reachable open cells
+\end{lstlisting}
+
+\Solution Iterate over cells. When finding an unseen open cell, increment count and flood-fill to mark the whole room. $O(nm)$ time.
+
+\Analysis Connected components on an implicit grid graph.
+
+\Topic{Labyrinth and Message Route}
+
+\Problem Find shortest path between two points on an unweighted grid/graph.
+
+\State BFS distance and parent from the start.
+\begin{lstlisting}
+q.push(start), seen[start]=true
+while q not empty:
+    v=q.pop()
+    for u in adj[v]:
+        if not seen[u]:
+            seen[u]=true
+            par[u]=v
+            q.push(u)
+if target seen: reconstruct by parent
+\end{lstlisting}
+
+\Solution BFS explores level by level, ensuring the first time a node is reached is via the shortest path. $O(V+E)$ time.
+
+\Analysis Parent arrays encode the shortest-path tree for path reconstruction.
+
+\Topic{Building Roads}
+
+\Problem Find the minimum new roads to connect all $n$ cities.
+
+\State Components of an undirected graph.
+\begin{lstlisting}
+leaders=[]
+for v=1..n:
+    if unseen[v]:
+        leaders.push(v)
+        DFS(v)
+print leaders.size()-1
+connect leaders[0] to leaders[i]
+\end{lstlisting}
+
+\Solution Find all connected components and pick a leader for each. Chain all leaders together. $O(n+m)$ time.
+
+\Analysis $c$ components require exactly $c-1$ edges to become fully connected.
+
+\Topic{Building Teams}
+
+\Problem Divide pupils into two teams with no intra-team friendships (bipartite check).
+
+\State Color each node 1 or 2.
+\begin{lstlisting}
+for each component:
+    color[start]=1
+    BFS:
+        for u in adj[v]:
+            if color[u]==0: color[u]=3-color[v]
+            else if color[u]==color[v]: impossible
+\end{lstlisting}
+
+\Solution BFS layers alternate colors. If an edge connects same-color nodes, it's not bipartite. $O(n+m)$ time.
+
+\Analysis Bipartite checking fails exactly when an odd-length cycle exists.
+
+\Topic{Round Trip}
+
+\Problem Find a cycle of length $\ge 3$ in an undirected graph.
+
+\State DFS parent tree in an undirected graph.
+\begin{lstlisting}
+dfs(v,p):
+    seen[v]=true
+    for u in adj[v]:
+        if u==p: continue
+        if seen[u]: recover cycle v..u using parents
+        else par[u]=v, dfs(u,v)
+\end{lstlisting}
+
+\Solution Run DFS. If we hit a visited node that isn't the parent, we found a back-edge (cycle). $O(n+m)$ time.
+
+\Analysis Any back-edge in a DFS tree defines a fundamental cycle.
+
+\Topic{Monsters}
+
+\Problem Escape a grid. You and monsters move 1 cell per second. Can you reach the boundary?
+
+\State Monster arrival time and player arrival time.
+\begin{lstlisting}
+multi-source BFS from all monsters -> mdist
+BFS from A:
+    for neighbor u:
+        nt = pdist[v]+1
+        if open and nt < mdist[u]:
+            visit u
+    if boundary reached: escape
+\end{lstlisting}
+
+\Solution Multi-source BFS computes earliest monster arrival per cell. Player BFS only steps on cells where player arrives strictly before any monster. $O(nm)$ time.
+
+\Analysis Precomputing monster times converts dynamic enemies into static cell constraints.
+
+\Topic{Shortest Routes I}
+
+\Problem Shortest path from node 1 with nonnegative edge weights.
+
+\State $dist[v]$ shortest known distance from 1.
+\begin{lstlisting}
+dist[1]=0
+pq.push(0,1)
+while pq not empty:
+    (d,v)=pop min
+    if d!=dist[v]: continue
+    for (u,w) in adj[v]:
+        if d+w < dist[u]:
+            dist[u]=d+w
+            pq.push(dist[u],u)
+\end{lstlisting}
+
+\Solution Dijkstra's algorithm. Processes nodes by increasing distance using a min-heap. $O((n+m)\log n)$ time.
+
+\Analysis The greedy choice is optimal since no negative edges can provide a cheaper route later.
+
+\Topic{Shortest Routes II}
+
+\Problem All-pairs shortest paths on a small graph ($n \le 500$).
+
+\State $dist[i][j]$ shortest path between all pairs.
+\begin{lstlisting}
+dist[i][i]=0
+for edge a-b weight w:
+    dist[a][b]=dist[b][a]=min(...,w)
+for k=1..n:
+  for i=1..n:
+    for j=1..n:
+      dist[i][j]=min(dist[i][j],dist[i][k]+dist[k][j])
+\end{lstlisting}
+
+\Solution Floyd-Warshall algorithm. Incrementally allows nodes $1..k$ as intermediate stops. $O(n^3)$ time.
+
+\Analysis The outermost loop must be $k$. State transition is based on path concatenation.
+
+\Topic{High Score and Cycle Finding}
+
+\Problem Max weight path, or detect negative cycles.
+
+\State Bellman-Ford distances. High Score can be solved by negating rewards.
+\begin{lstlisting}
+dist[1]=0
+repeat n-1:
+    relax all edges
+mark nodes relaxed on nth round
+if a relaxed node can reach n: answer is infinite
+\end{lstlisting}
+
+\Solution Bellman-Ford computes shortest paths. A relaxation on the $n$-th pass indicates a cycle. $O(nm)$ time.
+
+\Analysis For high score, a positive cycle matters only if it's reachable from start and can reach the end.
+
+\Topic{Flight Discount}
+
+\Problem Min cost path, where one edge's cost can be halved.
+
+\State $dist[v][0/1]$ = best cost to $v$ before/after using coupon.
+\begin{lstlisting}
+Dijkstra over (node,used)
+for edge v->u weight w:
+    relax (u,used) by +w
+    if used==0:
+        relax (u,1) by +w/2
+\end{lstlisting}
+
+\Solution Run Dijkstra on a state-expanded graph with $2n$ nodes. $O((n+m)\log n)$ time.
+
+\Analysis Expands state space to track resource usage.
+
+\Topic{Course Schedule}
+
+\Problem Topological sort of $n$ courses with prerequisite edges.
+
+\State In-degree counts remaining prerequisites.
+\begin{lstlisting}
+push all indegree-0 nodes
+while queue not empty:
+    v=pop, order.push(v)
+    for u in adj[v]:
+        if --indeg[u]==0: push u
+if order.size()<n: IMPOSSIBLE
+\end{lstlisting}
+
+\Solution Kahn's algorithm. Process nodes with 0 in-degree, decrementing neighbors. $O(n+m)$ time.
+
+\Analysis If all nodes aren't processed, a cycle exists.
+
+\Topic{Longest Flight Route}
+
+\Problem Longest path in a DAG.
+
+\State $dp[v]$ = max number of nodes on a path from 1 to $v$ in a DAG.
+\begin{lstlisting}
+toposort
+dp[1]=1, others=-INF
+for v in order:
+    for u in adj[v]:
+        if dp[v]+1 > dp[u]:
+            dp[u]=dp[v]+1
+            par[u]=v
+\end{lstlisting}
+
+\Solution Process nodes in topological order, relaxing edges to maximize path length. $O(n+m)$ time.
+
+\Analysis DAG property allows DP instead of NP-hard general longest path.
+
+\Topic{Game Routes}
+
+\Problem Count paths in a DAG from node 1 to $n$.
+
+\State $dp[v]$ = number of paths from 1 to $v$.
+\begin{lstlisting}
+toposort
+dp[1]=1
+for v in order:
+    for u in adj[v]:
+        dp[u]=(dp[u]+dp[v])%MOD
+\end{lstlisting}
+
+\Solution Process in topological order, pushing path counts forward. $O(n+m)$ time.
+
+\Analysis Standard DAG path-counting DP.
+
+\Topic{Investigation}
+
+\Problem Find min cost, number of min cost routes, min flights, max flights.
+
+\State For each city: shortest distance, number of shortest routes, min flights, max flights.
+\begin{lstlisting}
+if nd < dist[u]:
+    dist[u]=nd; ways[u]=ways[v]; mn[u]=mn[v]+1; mx[u]=mx[v]+1
+else if nd == dist[u]:
+    ways[u]+=ways[v]; mn[u]=min(mn[u],mn[v]+1); mx[u]=max(mx[u],mx[v]+1)
+\end{lstlisting}
+
+\Solution Run Dijkstra, but track all 4 metrics. Merge metrics on equal distances. $O((n+m)\log n)$ time.
+
+\Analysis Aggregating path stats over shortest-path DAG.
+
+\Topic{Planets Queries I and II}
+
+\Problem Navigate a functional graph. 
+
+\begin{lstlisting}
+up[0][v]=next[v]
+for j=1..LOG:
+    up[j][v]=up[j-1][ up[j-1][v] ]
+jump(v,k):
+    for bit j: if k has bit: v=up[j][v]
+\end{lstlisting}
+
+\Solution Binary lifting computes $k$-th successor in $O(\log k)$ time.
+
+\Analysis Pure binary lifting on a functional graph.
+
+\Topic{Planets Cycles}
+
+\Problem Find path length until a cycle repeats in a functional graph.
+
+\State Functional graph components consist of a directed cycle with trees feeding into it.
+\begin{lstlisting}
+find cycle nodes by indegree pruning or DFS states
+set answer for cycle nodes = cycle length
+reverse edges DFS from cycle:
+    ans[child] = ans[parent] + 1
+\end{lstlisting}
+
+\Solution Identify cycles, then propagate distances outwards through reversed trees. $O(n)$ time.
+
+\Analysis "Rho-shaped" components map perfectly to this decomposition.
+
+\Topic{Planets and Kingdoms}
+
+\Problem Find Strongly Connected Components (SCCs).
+
+\State Strongly connected components.
+\begin{lstlisting}
+DFS original graph, push by finish time
+DFS reversed graph in reverse finish order
+each DFS tree is one SCC
+\end{lstlisting}
+
+\Solution Kosaraju's algorithm finds SCCs by running DFS twice (once on reversed graph). $O(n+m)$ time.
+
+\Analysis Compresses cycles to form a DAG of SCCs.
+
+\Topic{Giant Pizza}
+
+\Problem 2-SAT problem for pizza toppings.
+
+\begin{lstlisting}
+(a OR b) -> (!a -> b), (!b -> a)
+find SCCs
+if x and !x in same SCC: impossible
+assignment by reverse SCC order
+\end{lstlisting}
+
+\Solution Convert to implication graph, find SCCs. If variable and negation share an SCC, unsatisfiable. $O(n+m)$ time.
+
+\Analysis Reverse topological order of SCCs provides a valid truth assignment.
+
+\Topic{Road Reparation}
+
+\Problem Minimum Spanning Tree (MST).
+
+\begin{lstlisting}
+sort edges by weight
+for edge (w,a,b):
+    if find(a)!=find(b):
+        unite(a,b)
+        cost += w
+\end{lstlisting}
+
+\Solution Kruskal's algorithm adds edges greedily avoiding cycles via DSU. $O(m \log m)$ time.
+
+\Analysis The cut property guarantees greedy choice works.
+
+\Topic{Road Construction}
+
+\Problem Maintain component count and max size as edges are added.
+
+\State DSU component count and largest component size after each edge.
+\begin{lstlisting}
+components=n, largest=1
+for road a-b:
+    if unite(a,b):
+        components--
+        largest=max(largest,size[root])
+    print components, largest
+\end{lstlisting}
+
+\Solution DSU tracks components and sizes online. $O(m \alpha(n))$ time.
+
+\Analysis Perfect fit for disjoint set union since edges are only added.
+
+\Topic{Mail Delivery}
+
+\Problem Find an Eulerian circuit.
+
+\begin{lstlisting}
+if any degree odd or disconnected: IMPOSSIBLE
+Hierholzer(v):
+    while unused edge from v:
+        mark edge used
+        Hierholzer(to)
+    path.push_back(v)
+\end{lstlisting}
+
+\Solution Hierholzer's algorithm traces circuits greedily, backtracking to splice them. $O(n+m)$ time.
+
+\Analysis Exists iff all degrees are even and edges are connected.
+
+\Topic{Download Speed}
+
+\Problem Find Maximum Flow from 1 to $n$.
+
+\begin{lstlisting}
+while BFS builds levels:
+    reset ptr
+    while pushed = DFS(s, INF):
+        flow += pushed
+\end{lstlisting}
+
+\Solution Dinic's algorithm pushes flow along shortest paths. $O(n^2 m)$ time.
+
+\Analysis Standard max-flow application.
+
+\Topic{School Dance}
+
+\Problem Maximum Bipartite Matching.
+
+\begin{lstlisting}
+source -> boys capacity 1
+boy -> girl if pair allowed
+girls -> sink capacity 1
+run maxflow; flow edges boy->girl are matches
+\end{lstlisting}
+
+\Solution Add source/sink with unit capacities. Run max flow. $O(m\sqrt{n})$ time.
+
+\Analysis Solves bipartite matching natively using Dinic's.
+
+\Topic{Hamiltonian Flights}
+
+\Problem Count Hamiltonian paths from 1 to $n$.
+
+\State $dp[mask][v]$ = ways to visit mask ending at $v$.
+\begin{lstlisting}
+dp[1<<0][0]=1
+for mask containing 0:
+    for v in mask:
+        for u with edge v->u and u not in mask:
+            dp[mask|1<<u][u]+=dp[mask][v]
+answer=dp[(1<<n)-1][n-1]
+\end{lstlisting}
+
+\Solution Held-Karp bitmask DP. $O(2^n n^2)$ time.
+
+\Analysis Tractable because $n \le 20$.

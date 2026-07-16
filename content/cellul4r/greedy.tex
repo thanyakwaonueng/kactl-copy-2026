@@ -1,0 +1,130 @@
+\section{Greedy from CSES}
+
+\Topic{Proof patterns}
+Greedy is ``take what can be proved safe''. The proof usually appears as:
+\begin{itemize}
+	\item \textbf{Exchange argument:} show swapping a non-greedy choice with a greedy one improves or maintains optimality.
+	\item \textbf{Stays-ahead:} prove greedy has at least as much progress as any competing solution at each step.
+	\item \textbf{Invariant frontier:} maintain a summary state (e.g. ``smallest unproducible sum'') preserved after each greedy step.
+	\item \textbf{Adjacent swap:} show swapping two neighboring elements not in greedy order improves the objective.
+\end{itemize}
+
+\Topic{Movie Festival}
+
+\Problem Given $n$ movies with start/end times ($1 \le n \le 2 \cdot 10^5$), find the max non-overlapping movies you can watch. Example: $[1,3],[2,5],[3,6] \implies 2$.
+
+Select maximum non-overlapping intervals by earliest finishing time.
+\begin{lstlisting}
+sort movies by end
+last=-INF, ans=0
+for (l,r) in movies:
+    if l >= last:
+        ans++, last=r
+\end{lstlisting}
+
+\Solution Sorting by end time leaves the most room for future movies. The exchange argument proves greedy optimality: any later-ending movie can be replaced by the greedy choice. $O(n \log n)$ time, $O(1)$ space.
+
+\Analysis If an optimal solution picks a later-ending first movie, replacing it with our greedy choice is still valid and frees up more time.
+
+\Topic{Ferris Wheel}
+
+\Problem Pair $n$ children into gondolas of capacity $x$. Max 2 per gondola. Minimize gondolas. Example: weights $[3,5,2,3]$, $x=6 \implies 2$.
+
+Pair the heaviest remaining child with the lightest if possible.
+\begin{lstlisting}
+sort w
+i=0, j=n-1, ans=0
+while i<=j:
+    if w[i]+w[j] <= x: i++, j--
+    else: j--
+    ans++
+\end{lstlisting}
+
+\Solution The heaviest child must ride. If they can pair with the lightest, doing so optimally uses capacity. If they cannot, they ride alone. $O(n \log n)$ time.
+
+\Analysis If the lightest child cannot pair with the heaviest, no one can. If they can, pairing them is optimal because the lightest child is the cheapest partner.
+
+\Topic{Apartments}
+
+\Problem Match $n$ applicants to $m$ apartments within size tolerance $k$. Maximize matches.
+
+Sort applicants and apartments; discard impossible ones.
+\begin{lstlisting}
+sort a,b
+i=j=ans=0
+while i<n and j<m:
+    if abs(a[i]-b[j])<=k: ans++, i++, j++
+    else if b[j] < a[i]-k: j++
+    else: i++
+\end{lstlisting}
+
+\Solution Two-pointer scan on sorted arrays. If an apartment is too small for the current applicant, it's too small for all later ones (skip apartment). If too large, the applicant can't match any remaining (skip applicant). $O(n \log n)$ time.
+
+\Analysis Discarding is safe because arrays are sorted. When a match exists, taking the smallest available apartment greedily is optimal by exchange argument.
+
+\Topic{Tasks and Deadlines}
+
+\Problem $n$ tasks with duration $t_i$ and deadline $d_i$. Reward is $d_i - \text{completion time}$. Maximize total reward.
+
+Reward is $\sum d_i-\sum C_i$, so sort by duration.
+\begin{lstlisting}
+sort by duration
+time=score=0
+for (t,d) in tasks:
+    time += t
+    score += d-time
+\end{lstlisting}
+
+\Solution $\sum d_i$ is constant, so minimize sum of completion times by doing shortest tasks first. $O(n \log n)$ time.
+
+\Analysis Swapping adjacent tasks $A$ and $B$ (where $A$ is longer) reduces overall completion time by $A - B > 0$. Thus, sorting by duration minimizes the penalty.
+
+\Topic{Missing Coin Sum}
+
+\Problem Find the smallest positive integer sum not formable by a subset of $n$ coins. Example: $[1,1,2,5] \implies 10$.
+
+Maintain $x=$ smallest sum not known reachable.
+\begin{lstlisting}
+sort coins
+x=1
+for c in coins:
+    if c>x: break
+    x += c
+answer=x
+\end{lstlisting}
+
+\Solution Sort coins. If we can form all sums up to $x-1$, and the next coin is $c \le x$, we can now form up to $x+c-1$. If $c > x$, $x$ is unreachable. $O(n \log n)$ time.
+
+\Analysis The invariant frontier $x$ represents our unbroken prefix of sums. A coin larger than $x$ leaves a gap at exactly $x$, halting the algorithm.
+
+\Topic{Reading Books}
+
+\Problem Two people read $n$ books. Book $i$ takes $t_i$ time. Both read all books, but not the same one simultaneously. Minimize total time.
+
+\begin{lstlisting}
+answer = max(sum(all times), 2*max_time)
+\end{lstlisting}
+
+\Solution Minimum time is bounded by the total sum (each reads everything) and $2 \times$ max book time (one waits while the other reads the longest book). $\max(S, 2 \cdot t_{\max})$ is always achievable. $O(n)$ time.
+
+\Analysis The longest book bottleneck happens when it exceeds all other books combined. Otherwise, they can perfectly overlap their reading schedules.
+
+\Topic{Movie Festival II}
+
+\Problem Generalization of Movie Festival: $k$ club members. Maximize total movies watched.
+
+Assign each movie to the watcher whose ending time is latest but compatible.
+\begin{lstlisting}
+sort movies by end
+ends = multiset of k zeros
+for (l,r) in movies:
+    it = last end <= l
+    if exists:
+        erase it
+        insert r
+        ans++
+\end{lstlisting}
+
+\Solution Sort movies by end time. Maintain $k$ watchers' end times. Assign the movie to the watcher with the largest end time $\le$ movie start. $O(n \log n)$ time.
+
+\Analysis Using the ``tightest fit'' watcher preserves the more flexible (earlier ending) watchers for future movies. This greedy choice avoids wasting slack time.

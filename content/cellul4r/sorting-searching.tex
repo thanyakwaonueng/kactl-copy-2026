@@ -1,0 +1,210 @@
+\section{Sorting and Searching from CSES}
+
+\Topic{Technique map}
+The most important decision is which \emph{shape} the search space has:
+\begin{itemize}
+	\item \textbf{Sort + scan:} For multiset properties. (Distinct Numbers, Restaurant Customers)
+	\item \textbf{Two pointers:} For monotonic boundaries. (Sum of Two Values, Apartments)
+	\item \textbf{Binary search on answer:} For monotone predicates. (Factory Machines)
+	\item \textbf{Dynamic sorted set:} For predecessor/successor queries. (Concert Tickets, Traffic Lights)
+	\item \textbf{Prefix sums + ordered structure:} For subarray constraints. (Subarray Sums)
+\end{itemize}
+
+\Topic{Sum of Two / Three / Four Values}
+
+\Problem Find distinct positions whose values sum to $x$.
+
+Keep indices before sorting. Two-sum is sorted two-pointers; three-sum fixes one; four-sum uses a map.
+\begin{lstlisting}
+// two values
+sort (value,index)
+i=0, j=n-1
+while i<j:
+    s=a[i]+a[j]
+    if s==x: answer
+    if s<x: i++ else j--
+
+// four values
+for i=0..n-1:
+    for j=i+1..n-1:
+        if x-a[i]-a[j] in oldPairs: answer
+    for j=0..i-1:
+        oldPairs[a[i]+a[j]]=(i,j)
+\end{lstlisting}
+
+\Solution Two-sum uses a two-pointer sweep on sorted data. Four-sum stores pair sums in a hash map, adding to the map only indices $<i$ to ensure disjointness.
+
+\Analysis Staggering insertion in four-sum avoids overlapping indices. Fixing an element for three-sum reduces it to two-sum.
+
+\Topic{Playlist}
+
+\Problem Find the longest contiguous segment of distinct songs.
+
+Store the last position of each song and move the left boundary past duplicates.
+\begin{lstlisting}
+l=0
+for r=0..n-1:
+    if seen a[r]: l=max(l,last[a[r]]+1)
+    last[a[r]]=r
+    ans=max(ans,r-l+1)
+\end{lstlisting}
+
+\Solution A sliding window $[l,r]$ avoids duplicates by jumping $l$ past the last seen index of $a[r]$. $O(n)$ time using a hash map.
+
+\Analysis The \texttt{max} ensures $l$ never moves backward when an old duplicate is found outside the current window.
+
+\Topic{Concert Tickets}
+
+\Problem Sell the most expensive affordable ticket to each customer in order.
+
+Sell the largest ticket not exceeding each customer's price.
+\begin{lstlisting}
+multiset tickets
+for x in customers:
+    it = tickets.upper_bound(x)
+    if it == begin: print -1
+    else:
+        --it
+        print *it
+        erase it
+\end{lstlisting}
+
+\Solution Use a multiset to query the predecessor of the customer's budget. Greedily taking the largest affordable ticket saves cheaper tickets. $O((n+m) \log n)$ time.
+
+\Analysis Predecessor queries with deletion are perfect for balanced BSTs (multisets).
+
+\Topic{Restaurant Customers}
+
+\Problem Find the maximum overlapping customer intervals.
+
+Sweep arrival/leave events to find maximum overlap.
+\begin{lstlisting}
+events += (arrival,+1), (leave,-1)
+sort by time; process leave before arrival on tie
+cur=ans=0
+for event: cur += delta, ans=max(ans,cur)
+\end{lstlisting}
+
+\Solution Event sweep converts interval overlap into a prefix sum. Sort by time and track the running total. $O(n \log n)$ time.
+
+\Analysis Processing departures before arrivals on ties handles CSES's non-overlapping endpoint semantics correctly.
+
+\Topic{Stick Lengths}
+
+\Problem Change $n$ stick lengths to be equal, minimizing $\sum |a_i - x|$.
+
+The best target length is the median.
+\begin{lstlisting}
+sort a
+m=a[n/2]
+ans=sum(abs(x-m))
+\end{lstlisting}
+
+\Solution The median minimizes the sum of absolute differences. $O(n \log n)$ time.
+
+\Analysis The cost function is convex. Moving the target shifts the penalty equally between left and right elements, zeroing out at the median.
+
+\Topic{Towers}
+
+\Problem Stack cubes. New cubes must be strictly smaller than the tower top. Minimize towers.
+
+Patience sorting: replace the smallest tower top strictly greater than $x$.
+\begin{lstlisting}
+multiset tops
+for x in cubes:
+    it=tops.upper_bound(x)
+    if it exists: erase it
+    tops.insert(x)
+answer=tops.size()
+\end{lstlisting}
+
+\Solution Greedily placing a cube on the tightest valid tower top preserves larger tops for future cubes. $O(n \log n)$ time.
+
+\Analysis This corresponds to patience sorting. By Dilworth's theorem, towers form the longest non-decreasing subsequence.
+
+\Topic{Traffic Lights}
+
+\Problem Add lights to a street and report the longest gap after each addition.
+
+Maintain light positions and segment lengths.
+\begin{lstlisting}
+pos={0,x}, len={x}
+for p in insertions:
+    r=*pos.upper_bound(p), l=*prev(...)
+    erase len r-l
+    insert len p-l and r-p
+    pos.insert(p)
+    print max(len)
+\end{lstlisting}
+
+\Solution A set tracks positions and a multiset tracks gap lengths. Inserting a light splits one gap into two. $O(n \log n)$ time.
+
+\Analysis Tracking both endpoints and gap lengths explicitly allows $O(\log n)$ updates and maximum queries.
+
+\Topic{Factory Machines}
+
+\Problem Find the minimum time for $n$ machines to make $k$ products.
+
+Binary search the minimum time.
+\begin{lstlisting}
+ok(T):
+    made=0
+    for machine in a:
+        made += T/machine
+        if made >= need: return true
+    return false
+
+lo=0, hi=1e18
+while lo<hi:
+    mid=(lo+hi)/2
+    if ok(mid): hi=mid
+    else: lo=mid+1
+\end{lstlisting}
+
+\Solution Production capacity is monotonic with time. Binary search the answer up to $10^{18}$. $O(n \log (\text{max time}))$ time.
+
+\Analysis The early exit inside \texttt{ok()} prevents integer overflow when testing large $T$.
+
+\Topic{Array Division}
+
+\Problem Divide array into $k$ contiguous subarrays to minimize maximum sum.
+
+Minimize maximum segment sum using binary search + greedy feasibility.
+\begin{lstlisting}
+ok(limit):
+    groups=1, cur=0
+    for x in a:
+        if x>limit: return false
+        if cur+x>limit:
+            groups++, cur=0
+        cur += x
+    return groups <= k
+\end{lstlisting}
+
+\Solution Binary search the maximum allowed sum. The greedy check forms the fewest groups by packing subarrays as tightly as possible. $O(n \log (\sum a_i))$ time.
+
+\Analysis The monotonic search space ranges from $\max(a_i)$ to $\sum a_i$.
+
+\Topic{Subarray Sums and Maximum Subarray Sum II}
+
+\Problem Count subarrays with exact sum (Sums I/II), or find max subarray sum within length bounds.
+
+Positive values allow sliding window. Arbitrary values require prefix sums.
+\begin{lstlisting}
+// Subarray Sums II
+cnt[0]=1
+pref=ans=0
+for x in a:
+    pref += x
+    ans += cnt[pref-target]
+    cnt[pref]++
+
+// max sum with length [A,B]
+insert pref[r-A]
+erase pref[r-B-1]
+ans=max(ans, pref[r]-min(active))
+\end{lstlisting}
+
+\Solution For exact sum, hash map counts past prefix sums matching the needed difference. For bounded max sum, a multiset queries the minimum valid left prefix.
+
+\Analysis Prefix sums convert subarray constraints into differences between two points, reducing to point lookups or sliding window extremum queries.
