@@ -1,152 +1,71 @@
 /**
  * Author: Tanya
- * Description: the most batshit insane code in this template-book hope that in whatever circumstances it never required this fucker
+ * Description: simple hld that I copy from cp algorithm
  */
-vector<int>adj[N];
+ vector<int> parent, depth, heavy, head, pos;
+int cur_pos;
 
-void add_edges(int a, int b){
-    adj[a].pb(b);
-    adj[b].pb(a);
-}
-
-const int LOG = 20;
-int timer = 0, seg_tree_size = 0;
-int depth[N], parent[N], n_subtree[N], heavyChild[N], chain[N], SegTreePos[N];
-int cost[N];
-int up[N][LOG]; // 2^j-th ancestor of n
-
-/*SegTree*/
-//finding max edge query
-ll tree[4*N];
-void update(int node,int n_l,int n_r,int q_i,int value){
-    if(n_r<q_i || q_i<n_l)return;
-    if(q_i==n_l && n_r==q_i){
-        tree[node] = value;
-        return;
-    }
-    int mid = (n_r+n_l)/2;
-    update(2*node,n_l,mid,q_i,value);
-    update(2*node+1,mid+1,n_r,q_i,value);
-    tree[node] = max(tree[2*node], tree[2*node+1]);
-}
-
-long long f(int node,int n_l,int n_r,int q_l,int q_r){
-    if(n_r<q_l || q_r<n_l)return 0;
-    if(q_l<=n_l && n_r<=q_r)return tree[node];
-    int mid = (n_l+n_r)/2;
-    return max(f(2*node,n_l,mid,q_l,q_r) , f(2*node+1,mid+1,n_r,q_l,q_r));
-}
-/*SegTree*/
-
-
-//preprecessing the arrays above
-void dfs(int a,int e){
-    chain[a] = a;
-    n_subtree[a] = 1;
-    int bestSon = -1, hmax = -1;
-    for(auto b:adj[a]){
-        if(b == e)continue;
-        depth[b] = depth[a] + 1;
-        parent[b] = a;
-        up[b][0] = parent[b];
-        for(int i=1;i<LOG;++i){
-            up[b][i] = up[up[b][i-1]][i-1];
-        }
-        dfs(b,a);
-        n_subtree[a] += n_subtree[b];
-        if(n_subtree[b] > hmax){
-            hmax = n_subtree[b], bestSon = b;
+int dfs(int v, vector<vector<int>> const& adj) {
+    int size = 1;
+    int max_c_size = 0;
+    for (int c : adj[v]) {
+        if (c != parent[v]) {
+            parent[c] = v, depth[c] = depth[v] + 1;
+            int c_size = dfs(c, adj);
+            size += c_size;
+            if (c_size > max_c_size)
+                max_c_size = c_size, heavy[v] = c;
         }
     }
-    heavyChild[a] = bestSon;
+    return size;
 }
 
-void computeHeavyChains(int a, int e){
-    if(heavyChild[a] != -1){
-        chain[heavyChild[a]] = chain[a];
-    } 
-    for(auto b:adj[a]){
-        if(b == e)continue;
-        computeHeavyChains(b, a);
-    }
-}
-
-void setHeavyChains(int a, int e){
-    SegTreePos[a] = timer++;
-    if(heavyChild[a] != -1){
-        setHeavyChains(heavyChild[a], a);
-        int w = 0;
-        for(auto b:adj[a]){
-            if(b == heavyChild[a]){
-                w = 1;
-                break;
-            }
-        }
-        //setting cost of heavyChild[a] = weight of edge (a, heavyChild[a])
-        cost[heavyChild[a]] = w; //change when tree is weighted
-    }
-    for(auto b:adj[a]){
-        if(b == e || heavyChild[a] == b)continue;
-        cost[b] = 1; //change when tree is weighted
-        setHeavyChains(b ,a);
+void decompose(int v, int h, vector<vector<int>> const& adj) {
+    head[v] = h, pos[v] = cur_pos++;
+    if (heavy[v] != -1)
+        decompose(heavy[v], h, adj);
+    for (int c : adj[v]) {
+        if (c != parent[v] && c != heavy[v])
+            decompose(c, c, adj);
     }
 }
 
-void buildSegTree(int n_node){
-    seg_tree_size = n_node;
-    while(__builtin_popcount(seg_tree_size)!=1)++seg_tree_size;
-    for(int i=0;i<n_node;++i){
-        update(1,0,seg_tree_size-1,SegTreePos[i], cost[i]);
-    }
-    for(int i=seg_tree_size-1;i>=1;--i){
-        tree[i] = max(tree[2*i], tree[2*i+1]);
-    }
+//this assume 0 base index and root is at 0
+void init(vector<vector<int>> const& adj) {
+    int n = adj.size();
+    parent = vector<int>(n);
+    depth = vector<int>(n);
+    heavy = vector<int>(n, -1);
+    head = vector<int>(n);
+    pos = vector<int>(n);
+    cur_pos = 0;
+
+    dfs(0, adj);
+    decompose(0, 0, adj);
 }
 
-ll queryPath(int mother, int son){
-    ll ans = LONG_MIN;
-    while(chain[mother] != chain[son]){
-        if(chain[son] == son){
-            ans = max(ans,f(1,0,seg_tree_size-1,SegTreePos[son],SegTreePos[son]));
-        } else {
-            ans = max(ans, f(1,0,seg_tree_size-1,SegTreePos[chain[son]],SegTreePos[son]));
-        }
-        son = parent[chain[son]];
-    }
-    
-    ans = max(ans, f(1,0,seg_tree_size-1,SegTreePos[mother]+1,SegTreePos[son]));
-    
-    return ans;
-}
+//TODO: implement segment tree
+//this implementation already handle LCA implicitly
+//Query the sum, maximum, minimum, or any other operation that satisfies
+//the associative property along the path from node a to node b
+//this query function is an example for maximum query
 
-int lca(int a, int b){
-    if(depth[a]<depth[b])swap(a,b);
-    int k = depth[a] - depth[b];
-    for(int i=LOG-1;i>=0;--i){
-        if(k &(1<<i)){
-            a = up[a][i];
-        }
+//so make sure to make the correct exclusion in query function below
+//if it's query path something on node value then it's fine
+//but if it qeury path something value on edge then I normally exclude the right bound
+//since I define paths as vertext disjoint paths which excluding first vertext
+ll query(int a, int b) { //query sum of edges weight on path version
+    ll res = 0;
+    for (; head[a] != head[b]; b = parent[head[b]]) {
+        if (depth[head[a]] > depth[head[b]])
+            swap(a, b);
+        ll cur_heavy_path = segment_tree_query(pos[head[b]], pos[b]);
+        res += cur_heavy_path;
     }
 
-    if(a == b)return a;
-    for(int i=LOG-1;i>=0;--i){
-        if(up[a][i] != up[b][i]){
-            a = up[a][i];
-            b = up[b][i];
-        }
-    }
-    return up[a][0];
-}
-
-ll query(int x, int y){
-    int l = lca(x,y);
-    return max( queryPath(l, x), queryPath(l, y)); //combine the answer
-
-}
-
-void hld_init(int n){
-    dfs(0,-1);
-    computeHeavyChains(0,-1);
-    setHeavyChains(0,-1);
-    buildSegTree(n);
+    if (depth[a] > depth[b])
+        swap(a, b);
+    ll last_heavy_path = segment_tree_query(pos[a]+1, pos[b]);
+    res += last_heavy_path;
+    return res;
 }
